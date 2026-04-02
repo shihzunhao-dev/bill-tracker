@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#1a1a3e"/>
+  <rect x="80" y="120" width="352" height="220" rx="20" fill="#6c63ff" opacity="0.3"/>
+  <rect x="80" y="120" width="352" height="60" rx="20" fill="#6c63ff"/>
+  <circle cx="360" cy="280" r="60" fill="#4ade80" opacity="0.9"/>
+  <path d="M335 280 L355 300 L385 260" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="110" y="210" width="140" height="12" rx="6" fill="#9898b8" opacity="0.5"/>
+  <rect x="110" y="240" width="100" height="12" rx="6" fill="#9898b8" opacity="0.3"/>
+  <rect x="110" y="270" width="120" height="12" rx="6" fill="#9898b8" opacity="0.5"/>
+  <rect x="110" y="300" width="80" height="12" rx="6" fill="#9898b8" opacity="0.3"/>
+  <text x="256" y="430" text-anchor="middle" font-family="Arial" font-size="48" font-weight="bold" fill="#e8e8f0">繳費追蹤</text>
+</svg>

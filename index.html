@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#16213e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <title>繳費追蹤</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Setup Wizard (first time) -->
+  <div id="setupWizard" class="setup-wizard" style="display:none">
+    <div class="setup-container">
+      <div class="setup-header">
+        <div class="setup-icon">💳</div>
+        <h2>歡迎使用繳費追蹤</h2>
+        <p>先設定你要追蹤的帳單項目</p>
+      </div>
+
+      <div class="setup-list" id="setupList">
+        <!-- Dynamic rows here -->
+      </div>
+
+      <button class="btn btn-outline btn-block" onclick="addSetupRow()" style="margin-top:12px">+ 再加一筆</button>
+
+      <div class="setup-templates">
+        <p style="font-size:12px;color:var(--text-secondary);margin:16px 0 8px">快速加入：</p>
+        <div class="setup-quick-btns">
+          <button class="btn btn-outline" onclick="addSetupRow('電話費','phone',15)">📱 電話費</button>
+          <button class="btn btn-outline" onclick="addSetupRow('網路費','wifi',20)">🌐 網路費</button>
+          <button class="btn btn-outline" onclick="addSetupRow('電費','zap',20)">⚡ 電費</button>
+          <button class="btn btn-outline" onclick="addSetupRow('水費','droplet',20)">💧 水費</button>
+          <button class="btn btn-outline" onclick="addSetupRow('房租','home',5)">🏠 房租</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="finishSetup()" style="margin-top:24px;padding:16px;font-size:16px" id="setupDoneBtn" disabled>
+        開始使用
+      </button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header" id="appHeader">
+    <h1>繳費追蹤</h1>
+    <div class="period-label" id="periodLabel"></div>
+  </header>
+
+  <!-- Page: 本月帳單 -->
+  <main class="page active" id="pageBills">
+    <div class="stats-bar" id="statsBar"></div>
+    <div id="billsList"></div>
+  </main>
+
+  <!-- Page: 歷史紀錄 -->
+  <main class="page" id="pageHistory">
+    <div id="historyList"></div>
+  </main>
+
+  <!-- Page: 設定 -->
+  <main class="page" id="pageSettings">
+    <div class="settings-section">
+      <h3>帳單項目</h3>
+      <div id="settingsList"></div>
+      <button class="btn btn-primary btn-block" onclick="showAddModal()" style="margin-top:12px">+ 新增帳單項目</button>
+    </div>
+    <div class="settings-section">
+      <h3>資料管理</h3>
+      <div class="btn-group">
+        <button class="btn btn-outline" style="flex:1" onclick="doExport()">匯出備份</button>
+        <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('importFile').click()">匯入還原</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
+    </div>
+  </main>
+
+  <!-- Modal: 新增帳單項目 -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <h3>新增帳單項目</h3>
+      <div class="form-group">
+        <label>名稱</label>
+        <input type="text" id="modalName" placeholder="例如：房租">
+      </div>
+      <div class="form-group">
+        <label>每月結帳日（出帳日，可留空）</label>
+        <input type="number" id="modalClosingDay" min="1" max="31" placeholder="例如：5">
+      </div>
+      <div class="form-group">
+        <label>每月繳費日（截止日）</label>
+        <input type="number" id="modalDueDay" min="1" max="31" value="15">
+      </div>
+      <div class="form-group">
+        <label>類型圖示</label>
+        <select id="modalIcon">
+          <option value="credit-card">💳 信用卡</option>
+          <option value="phone">📱 電話費</option>
+          <option value="wifi">🌐 網路費</option>
+          <option value="receipt">📄 其他帳單</option>
+          <option value="home">🏠 房租</option>
+          <option value="zap">⚡ 電費</option>
+          <option value="droplet">💧 水費</option>
+        </select>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-outline" style="flex:1" onclick="closeAddModal()">取消</button>
+        <button class="btn btn-primary" style="flex:1" onclick="doAdd()">新增</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="pageBills">
+      <span class="tab-icon">📋</span>
+      <span>本月</span>
+    </button>
+    <button class="tab-btn" data-tab="pageHistory">
+      <span class="tab-icon">📁</span>
+      <span>歷史</span>
+    </button>
+    <button class="tab-btn" data-tab="pageSettings">
+      <span class="tab-icon">⚙️</span>
+      <span>設定</span>
+    </button>
+  </nav>
+
+  <script src="storage.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
