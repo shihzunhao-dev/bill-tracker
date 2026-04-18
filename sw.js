@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bill-tracker-v1';
+const CACHE_NAME = 'bill-tracker-v4';
 const ASSETS = [
   './',
   './index.html',

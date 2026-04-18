@@ -183,9 +183,24 @@ function importData(file, callback) {
   reader.readAsText(file);
 }
 
-function getDaysUntilDue(bill) {
+function getClosingDate(bill) {
+  if (!bill.closingDay) return null;
   const [year, month] = bill.period.split('-').map(Number);
-  const dueDate = new Date(year, month - 1, bill.dueDay);
+  return new Date(year, month - 1, bill.closingDay);
+}
+
+function getDueDate(bill) {
+  const [year, month] = bill.period.split('-').map(Number);
+  let dueYear = year, dueMonth = month;
+  if (bill.closingDay && bill.closingDay > bill.dueDay) {
+    if (dueMonth === 12) { dueYear += 1; dueMonth = 1; }
+    else { dueMonth += 1; }
+  }
+  return new Date(dueYear, dueMonth - 1, bill.dueDay);
+}
+
+function getDaysUntilDue(bill) {
+  const dueDate = getDueDate(bill);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
@@ -217,6 +232,78 @@ function getUrgency(bill) {
   if (days <= 3) return 'urgent';
   if (days <= 7) return 'warning';
   return 'normal';
+}
+
+// ─── GitHub Gist 雲端同步 ───────────────────────────────
+const GIST_FILENAME = 'bill-tracker.json';
+
+function getSyncConfig(data) {
+  return (data.settings && data.settings.sync) || {};
+}
+
+function setSyncConfig(data, patch) {
+  data.settings.sync = { ...(data.settings.sync || {}), ...patch };
+  saveData(data);
+  return data;
+}
+
+async function gistCreate(token) {
+  const res = await fetch('https://api.github.com/gists', {
+    method: 'POST',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      description: 'bill-tracker backup',
+      public: false,
+      files: { [GIST_FILENAME]: { content: '{}' } }
+    })
+  });
+  if (!res.ok) throw new Error(`建立失敗 HTTP ${res.status}`);
+  const json = await res.json();
+  return json.id;
+}
+
+async function gistPush(data) {
+  const cfg = getSyncConfig(data);
+  if (!cfg.gistId || !cfg.token) throw new Error('請先填入 Gist ID 與 Token');
+  const payload = JSON.parse(JSON.stringify(data));
+  if (payload.settings && payload.settings.sync) delete payload.settings.sync.token;
+  const res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `token ${cfg.token}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      files: { [GIST_FILENAME]: { content: JSON.stringify(payload, null, 2) } }
+    })
+  });
+  if (!res.ok) throw new Error(`上傳失敗 HTTP ${res.status}`);
+  return true;
+}
+
+async function gistPull(data) {
+  const cfg = getSyncConfig(data);
+  if (!cfg.gistId || !cfg.token) throw new Error('請先填入 Gist ID 與 Token');
+  const res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
+    headers: {
+      'Authorization': `token ${cfg.token}`,
+      'Accept': 'application/vnd.github+json'
+    }
+  });
+  if (!res.ok) throw new Error(`下載失敗 HTTP ${res.status}`);
+  const json = await res.json();
+  const file = json.files && json.files[GIST_FILENAME];
+  if (!file || !file.content) throw new Error('Gist 內沒有 bill-tracker.json');
+  const imported = JSON.parse(file.content);
+  imported.settings = imported.settings || {};
+  imported.settings.sync = { ...(imported.settings.sync || {}), gistId: cfg.gistId, token: cfg.token };
+  saveData(imported);
+  return imported;
 }
 
 function ensureCurrentPeriodBills(data) {

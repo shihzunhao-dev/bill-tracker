@@ -121,6 +121,7 @@ function showApp() {
   renderBills();
   renderHistory();
   renderSettings();
+  renderSyncStatus();
   updatePeriodLabel();
 }
 
@@ -227,9 +228,11 @@ function renderBillCard(bill) {
 
   let metaText = '';
   if (bill.closingDay) {
-    metaText += `結帳：${bill.closingDay} 號 · `;
+    const c = getClosingDate(bill);
+    metaText += `結帳：${c.getMonth() + 1}/${c.getDate()} · `;
   }
-  metaText += `繳費：${bill.dueDay} 號`;
+  const d = getDueDate(bill);
+  metaText += `繳費：${d.getMonth() + 1}/${d.getDate()}`;
 
   if (checked) {
     metaText += ` · 已於 ${bill.paidDate} 繳費`;
@@ -483,3 +486,66 @@ function doImport(event) {
 document.getElementById('addModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) resetModal();
 });
+
+// ─── GitHub Gist 雲端同步 ───────────────────────────────
+function renderSyncStatus() {
+  const cfg = getSyncConfig(data);
+  const gidEl = document.getElementById('syncGistId');
+  const tkEl = document.getElementById('syncToken');
+  if (gidEl) gidEl.value = cfg.gistId || '';
+  if (tkEl) tkEl.value = cfg.token || '';
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.textContent = cfg.lastSync ? `上次同步：${cfg.lastSync}` : '尚未同步';
+}
+
+function saveSyncConfig() {
+  const gistId = document.getElementById('syncGistId').value.trim();
+  const token = document.getElementById('syncToken').value.trim();
+  data = setSyncConfig(data, { gistId, token });
+  alert('已儲存憑證');
+  renderSyncStatus();
+}
+
+async function createNewGist() {
+  const token = document.getElementById('syncToken').value.trim();
+  if (!token) { alert('請先填入 Token'); return; }
+  try {
+    const gistId = await gistCreate(token);
+    document.getElementById('syncGistId').value = gistId;
+    data = setSyncConfig(data, { gistId, token });
+    alert('建立成功！Gist ID：' + gistId);
+    renderSyncStatus();
+  } catch (e) {
+    alert('建立失敗：' + e.message);
+  }
+}
+
+async function syncPush() {
+  try {
+    await gistPush(data);
+    const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    data = setSyncConfig(data, { lastSync: now });
+    renderSyncStatus();
+    alert('已上傳到雲端');
+  } catch (e) {
+    alert('上傳失敗：' + e.message);
+  }
+}
+
+async function syncPull() {
+  if (!confirm('將覆蓋目前所有本機資料，確定從雲端還原？')) return;
+  try {
+    data = await gistPull(data);
+    data = ensureCurrentPeriodBills(data);
+    const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    data = setSyncConfig(data, { lastSync: now });
+    renderBills();
+    renderHistory();
+    renderSettings();
+    renderSyncStatus();
+    alert('已從雲端還原');
+  } catch (e) {
+    alert('還原失敗：' + e.message);
+  }
+}
