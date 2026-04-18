@@ -74,12 +74,13 @@ function getPaidBills(data) {
   return data.bills.filter((b) => b.status === 'paid');
 }
 
-function markAsPaid(data, billId) {
+function markAsPaid(data, billId, amount) {
   const bill = data.bills.find((b) => b.id === billId);
   if (!bill) return data;
 
   bill.status = 'paid';
   bill.paidDate = new Date().toISOString().slice(0, 10);
+  if (amount !== undefined) bill.amount = amount;
 
   const nextPeriod = getNextPeriod(bill.period);
   const alreadyExists = data.bills.some(
@@ -111,8 +112,16 @@ function markAsUnpaid(data, billId) {
   if (!bill) return data;
   bill.status = 'pending';
   bill.paidDate = null;
+  bill.amount = null;
   saveData(data);
   return data;
+}
+
+function formatAmount(amount) {
+  if (amount == null || amount === '') return '';
+  const n = Number(amount);
+  if (isNaN(n)) return '';
+  return 'NT$' + n.toLocaleString('en-US');
 }
 
 function updateBillType(data, typeId, updates) {

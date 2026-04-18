@@ -237,6 +237,7 @@ function renderBillCard(bill) {
 
   if (checked) {
     metaText += ` · 已於 ${bill.paidDate} 繳費`;
+    if (bill.amount != null) metaText += ` · ${formatAmount(bill.amount)}`;
   } else if (!issued) {
     const closingDays = getDaysUntilClosing(bill);
     if (closingDays === 0) metaText += ' · 今天出帳';
@@ -280,11 +281,20 @@ function togglePaid(billId) {
   if (!bill) return;
 
   if (bill.status === 'pending') {
-    data = markAsPaid(data, billId);
+    const input = prompt(`${bill.name} 繳費金額（可留空）`, bill.amount != null ? String(bill.amount) : '');
+    if (input === null) return;
+    const trimmed = input.trim().replace(/,/g, '');
+    let amount = null;
+    if (trimmed !== '') {
+      amount = Number(trimmed);
+      if (isNaN(amount) || amount < 0) { alert('金額格式不正確'); return; }
+    }
+    data = markAsPaid(data, billId, amount);
   } else {
     data = markAsUnpaid(data, billId);
   }
   renderBills();
+  renderHistory();
 }
 
 // Render History
@@ -328,6 +338,7 @@ function renderHistory() {
             <div class="history-item">
               <span class="hi-icon">${ICONS[b.icon] || '📄'}</span>
               <span class="hi-name">${b.name}</span>
+              <span class="hi-amount">${formatAmount(b.amount)}</span>
               <span class="hi-date">${b.paidDate || ''}</span>
             </div>
           `).join('')}

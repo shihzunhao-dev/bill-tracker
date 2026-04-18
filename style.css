@@ -324,6 +324,13 @@ body {
   font-size: 12px;
 }
 
+.history-item .hi-amount {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-right: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Settings */
 .settings-section {
   margin-bottom: 24px;
