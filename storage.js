@@ -121,7 +121,7 @@ function updateBillType(data, typeId, updates) {
   Object.assign(bt, updates);
 
   data.bills.forEach((b) => {
-    if (b.typeId === typeId && b.status === 'pending') {
+    if (b.typeId === typeId) {
       if (updates.name !== undefined) b.name = updates.name;
       if (updates.dueDay !== undefined) b.dueDay = updates.dueDay;
       if (updates.icon !== undefined) b.icon = updates.icon;
@@ -130,6 +130,23 @@ function updateBillType(data, typeId, updates) {
   });
 
   saveData(data);
+  return data;
+}
+
+function syncBillsWithTypes(data) {
+  if (!data || !Array.isArray(data.billTypes) || !Array.isArray(data.bills)) return data;
+  let changed = false;
+  data.bills.forEach((b) => {
+    const bt = data.billTypes.find((t) => t.id === b.typeId);
+    if (!bt) return;
+    if (b.name !== bt.name) { b.name = bt.name; changed = true; }
+    if (b.icon !== bt.icon) { b.icon = bt.icon; changed = true; }
+    if (b.dueDay !== bt.dueDay) { b.dueDay = bt.dueDay; changed = true; }
+    const btClosing = bt.closingDay || null;
+    const bClosing = b.closingDay || null;
+    if (bClosing !== btClosing) { b.closingDay = btClosing; changed = true; }
+  });
+  if (changed) saveData(data);
   return data;
 }
 

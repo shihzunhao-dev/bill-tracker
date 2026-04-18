@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!isSetupDone(data)) {
     showSetupWizard();
   } else {
+    data = syncBillsWithTypes(data);
     data = ensureCurrentPeriodBills(data);
     showApp();
   }
@@ -537,6 +538,7 @@ async function syncPull() {
   if (!confirm('將覆蓋目前所有本機資料，確定從雲端還原？')) return;
   try {
     data = await gistPull(data);
+    data = syncBillsWithTypes(data);
     data = ensureCurrentPeriodBills(data);
     const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
     data = setSyncConfig(data, { lastSync: now });
