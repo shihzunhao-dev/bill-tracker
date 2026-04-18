@@ -299,14 +299,27 @@ async function gistPull(data) {
   const json = await res.json();
   const file = json.files && json.files[GIST_FILENAME];
   if (!file || !file.content) throw new Error('Gist 內沒有 bill-tracker.json');
-  const imported = JSON.parse(file.content);
-  imported.settings = imported.settings || {};
+  let imported;
+  try {
+    imported = JSON.parse(file.content);
+  } catch (e) {
+    throw new Error('Gist 內容不是合法 JSON');
+  }
+  if (!imported || typeof imported !== 'object') {
+    throw new Error('Gist 內容為空，請先在有資料的裝置按「上傳雲端」');
+  }
+  if (!Array.isArray(imported.billTypes)) imported.billTypes = [];
+  if (!Array.isArray(imported.bills)) imported.bills = [];
+  imported.settings = imported.settings || { theme: 'dark', setupDone: true };
+  if (imported.settings.setupDone === undefined) imported.settings.setupDone = imported.billTypes.length > 0;
   imported.settings.sync = { ...(imported.settings.sync || {}), gistId: cfg.gistId, token: cfg.token };
   saveData(imported);
   return imported;
 }
 
 function ensureCurrentPeriodBills(data) {
+  if (!data || !Array.isArray(data.billTypes)) return data;
+  if (!Array.isArray(data.bills)) data.bills = [];
   const period = getCurrentPeriod();
   data.billTypes.forEach((bt) => {
     const exists = data.bills.some((b) => b.typeId === bt.id && b.period === period);
